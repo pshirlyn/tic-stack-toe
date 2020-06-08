@@ -40,30 +40,35 @@ move x y square = do
     put board'
     return board'
 
+-- returns a new List replacing element at index with given elem
 replace :: Int -> a -> [a] -> [a]
 replace index elem = map (\(index', elem') -> if index' == index then elem else elem') . zip [0..]
 
+-- get the inverse of a player, accepts only X and O
 invertPlayer :: Square -> Square
 invertPlayer player
     | player == X = O
     | player == O = X
     | otherwise   = error "undefined player"
 
--- play the game
-play :: Square -> IO()
+-- move sequence for given player
+play :: Square -> StateT Board IO ()
 play player = do
-    putStrLn $ "Enter move, Player " ++ show player
-    square <- getLine
-    let (x, y) = square `divMod` 3
+    lift $ putStrLn $ "Enter move, Player " ++ show player
+    square <- lift getLine
+    let num = read square
+    let (x, y) = num `divMod` 3
     board <- move x y player
-    print $ board
+    -- print $ board
     play $ invertPlayer player
 
-testOut :: IO()
-testOut = do
-    print $ evalState testSeq emptyBoard
-    where testSeq = do
-            board <- get
-            board' <- move 1 2 X
-            boardState <- move 1 1 O
-            return boardState
+
+
+-- testOut :: IO ()
+-- testOut = do
+--     print $ evalState testSeq emptyBoard
+--     where testSeq = do
+--             board <- get
+--             board' <- move 1 2 X
+--             boardState <- move 1 1 O
+--             return boardState
