@@ -19,12 +19,9 @@ tied board = not (won board || any (== Empty) (concat board))
 -- check if any win condition has been reached
 won :: Board -> Bool
 won board = any allSame (board ++ transpose board ++ diagonals board)
-
--- get the diagonals of this board
-diagonals :: Board -> [[Square]]
-diagonals [[a,b,c],
-            [d,e,f],
-            [g,h,i]] = [[a,e,i],[c,e,g]]
+    where diagonals [[a,b,c],
+                    [d,e,f],
+                    [g,h,i]] = [[a,e,i],[c,e,g]]
 
 -- check if every value in this list has the same value, not Empty
 allSame :: [Square] -> Bool
@@ -58,10 +55,14 @@ play player = do
     square <- lift getLine
     let num = read square
     let (x, y) = num `divMod` 3
-    board <- move x y player
-    -- print $ board
+    board <- (state . runState) $ move x y player -- hoisting
+    lift $ print $ board
     play $ invertPlayer player
 
+main :: IO ()
+main = do
+    board <- execStateT (play X) emptyBoard
+    print $ board
 
 
 -- testOut :: IO ()
