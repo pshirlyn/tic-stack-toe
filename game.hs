@@ -53,23 +53,20 @@ play :: Square -> StateT Board IO ()
 play player = do
     lift $ putStrLn $ "Enter move, Player " ++ show player
     square <- lift getLine
-    let num = read square
-    let (x, y) = num `divMod` 3
-    board <- (state . runState) $ move x y player -- hoisting
-    lift $ print $ board
-    play $ invertPlayer player
+    if square == "q"
+    then lift $ putStrLn $ "Exiting"
+    else do
+        let num = read square
+        let (x, y) = num `divMod` 3
+        board <- (state . runState) $ move x y player -- hoisting
+        lift $ print $ board
+        if (won board)
+        then lift $ putStrLn $ "boad won, game over"
+        else if (tied board)
+            then lift $ putStrLn "game tied"
+            else play $ invertPlayer player
 
-main :: IO ()
-main = do
+textGame :: IO ()
+textGame = do
     board <- execStateT (play X) emptyBoard
     print $ board
-
-
--- testOut :: IO ()
--- testOut = do
---     print $ evalState testSeq emptyBoard
---     where testSeq = do
---             board <- get
---             board' <- move 1 2 X
---             boardState <- move 1 1 O
---             return boardState
