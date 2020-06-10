@@ -2,9 +2,21 @@ import Data.List
 import System.IO
 import Control.Monad.State.Lazy
 
+import Brick
+import Brick.BChan (newBChan, writeBChan)
+import qualified Brick.Widgets.Border as B
+import qualified Brick.Widgets.Border.Style as BS
+import qualified Brick.Widgets.Center as C
+import qualified Graphics.Vty as V
+
 data Square = X | O | Empty
     deriving (Show, Eq)
 type Board = [[Square]]
+
+data Action = Quit | Play Int Int
+    deriving (Show)
+
+data GameState = Won | Tied | Playing
 
 -- generate an empty board
 emptyBoard :: Board
@@ -48,25 +60,63 @@ invertPlayer player
     | player == O = X
     | otherwise   = error "undefined player"
 
--- move sequence for given player
+parseAction :: String -> Action
+parseAction input = 
+    if input == "q"
+    then Quit
+    else let num = read input in
+         let (x, y) = num `divMod` 3 in
+         Play x y
+
+boardState :: Board -> GameState
+boardState board =
+    if won board
+    then Won
+    else if tied board
+        then Tied
+        else Playing
+
 play :: Square -> StateT Board IO ()
 play player = do
     lift $ putStrLn $ "Enter move, Player " ++ show player
     square <- lift getLine
-    if square == "q"
-    then lift $ putStrLn $ "Exiting"
-    else do
-        let num = read square
-        let (x, y) = num `divMod` 3
+    case parseAction square of
+      Quit     -> lift $ putStrLn $ "Exiting"
+      Play x y -> do
         board <- (state . runState) $ move x y player -- hoisting
         lift $ print $ board
-        if (won board)
-        then lift $ putStrLn $ "boad won, game over"
-        else if (tied board)
-            then lift $ putStrLn "game tied"
-            else play $ invertPlayer player
+        case boardState board of
+          Won     -> lift $ putStrLn $ show player ++ " won!"
+          Tied    -> lift $ putStrLn "game tied"
+          Playing -> play $ invertPlayer player
 
-textGame :: IO ()
-textGame = do
-    board <- execStateT (play X) emptyBoard
-    print $ board
+
+textGame :: IO Board
+textGame = execStateT (play X) emptyBoard
+
+-- get a string representation of the square at this position
+getRow :: Int -> String
+getRow x = undefined
+
+-- app :: App Board
+-- app = App { appDraw = drawUI
+--             , appChooseCursor = 
+-- }
+
+-- drawGrid :: Board -> Widget Name
+-- drawGrid b = withBorderStyle BS.unicodeBold
+--     $ B.borderWithLabel (str "TicTacToe")
+--     $ vBox rows
+
+renderBoard :: Board -> Widget ()
+renderBoard b = (str "X" <=> str "_" <=> str "O") <+> 
+     (str "X" <=> str "_" <=> str "O") <+>
+     (str "X" <=> str "_" <=> str "O")
+
+ui :: Widget ()
+ui = (str "X" <=> str "_" <=> str "O") <+> 
+     (str "X" <=> str "_" <=> str "O") <+>
+     (str "X" <=> str "_" <=> str "O")
+    
+main :: IO ()
+main = simpleMain ui
