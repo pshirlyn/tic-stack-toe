@@ -95,8 +95,8 @@ textGame :: IO Board
 textGame = execStateT (play X) emptyBoard
 
 -- get a string representation of the square at this position
-getRow :: Int -> String
-getRow x = undefined
+getRow :: Board -> Int -> String
+getRow board x = show (board !! x)
 
 -- app :: App Board
 -- app = App { appDraw = drawUI
@@ -109,14 +109,20 @@ getRow x = undefined
 --     $ vBox rows
 
 renderBoard :: Board -> Widget ()
-renderBoard b = (str "X" <=> str "_" <=> str "O") <+> 
-     (str "X" <=> str "_" <=> str "O") <+>
-     (str "X" <=> str "_" <=> str "O")
+renderBoard b = displayRow b 0 <=> displayRow b 1 <=> displayRow b 2
 
-ui :: Widget ()
-ui = (str "X" <=> str "_" <=> str "O") <+> 
-     (str "X" <=> str "_" <=> str "O") <+>
-     (str "X" <=> str "_" <=> str "O")
-    
+displayRow :: Board -> Int -> Widget ()
+displayRow board i = str (getSquare board i 0)
+                <+> str (getSquare board i 1)
+                <+> str (getSquare board i 2)
+
 main :: IO ()
-main = simpleMain ui
+main = do
+    simpleMain $ renderBoard emptyBoard
+
+getSquare :: Board -> Int -> Int -> String
+getSquare board x y 
+    | square == Empty = "_"
+    | square == X     = "X"
+    | square == O     = "O" 
+    where square = (board !! x) !! y
