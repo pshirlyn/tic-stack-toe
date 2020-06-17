@@ -1,0 +1,98 @@
+module TicTacToePlayer where
+  
+import Graphics.UI.Gtk hiding (get, Action)
+
+-- main :: IO ()
+-- main = do
+--     initGUI
+--     window <- windowNew
+--     set window [ windowTitle         := "Tic-Tac-Toe"
+--                 , windowResizable    := True
+--                 , windowDefaultWidth  := 600
+--                 , windowDefaultHeight := 600 ]
+    
+--     grid <- gridNew
+--     -- gridSetRowHomogeneous grid True
+
+--     -- let attach x y w h item = gridAttach grid item x y w h
+--     -- mkBtn "_"   >>= attach 0 0 1 1
+--     -- mkBtn "_"   >>= attach 0 1 1 1
+--     -- mkBtn "_"   >>= attach 0 2 1 1
+--     -- mkBtn "_"   >>= attach 1 0 1 1
+--     -- mkBtn "_"   >>= attach 1 1 1 1
+--     -- mkBtn "_"   >>= attach 1 2 1 1
+--     -- mkBtn "_"   >>= attach 2 0 1 1
+--     -- mkBtn "_"   >>= attach 2 1 1 1
+--     -- mkBtn "_"   >>= attach 2 2 1 1    
+--     -- containerAdd window grid
+
+--     widgetShowAll window
+--     mainGUI  
+
+hello :: (ButtonClass o) => o -> IO ()
+hello b = set b [buttonLabel := "Hello World"]
+
+buttonSwitch :: Button -> IO ()
+buttonSwitch b = do
+  txt <- buttonGetLabel b
+  let newtxt = case txt of
+                 "_"  -> "X"
+                 "X"  -> "O"
+                 "O"  -> "_"
+  buttonSetLabel b newtxt
+
+main :: IO ()
+main = do
+    initGUI
+    window <- windowNew
+    button <- buttonNew
+    set window [windowTitle := "Tic Tac Toe"
+            , windowDefaultWidth := 200
+            , windowDefaultHeight := 200
+            , containerBorderWidth := 10]
+    table <- tableNew 3 3 True
+    containerAdd window table
+
+    -- row 1
+    button1 <- buttonNewWithLabel "_"
+    onClicked button1 (buttonSwitch button1)
+    tableAttachDefaults table button1 0 1 0 1
+
+    button2 <- buttonNewWithLabel "_"
+    onClicked button2 (buttonSwitch button2)
+    tableAttachDefaults table button2 1 2 0 1
+
+    button3 <- buttonNewWithLabel "_"
+    onClicked button3 (buttonSwitch button3)
+    tableAttachDefaults table button3 2 3 0 1
+
+    -- row 2
+    button1 <- buttonNewWithLabel "_"
+    onClicked button1 (buttonSwitch button1)
+    tableAttachDefaults table button1 0 1 1 2
+
+    button2 <- buttonNewWithLabel "_"
+    onClicked button2 (buttonSwitch button2)
+    tableAttachDefaults table button2 1 2 1 2
+    
+    button3 <- buttonNewWithLabel "_"
+    onClicked button3 (buttonSwitch button3)
+    tableAttachDefaults table button3 2 3 1 2
+
+    -- row 3
+    button1 <- buttonNewWithLabel "_"
+    onClicked button1 (buttonSwitch button1)
+    tableAttachDefaults table button1 0 1 2 3
+
+    button2 <- buttonNewWithLabel "_"
+    onClicked button2 (buttonSwitch button2)
+    tableAttachDefaults table button2 1 2 2 3
+    
+    button3 <- buttonNewWithLabel "_"
+    onClicked button3 (buttonSwitch button3)
+    tableAttachDefaults table button3 2 3 2 3
+
+
+    onDestroy window mainQuit
+    widgetShowAll window
+    mainGUI

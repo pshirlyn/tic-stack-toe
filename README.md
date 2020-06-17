@@ -1,2 +1,1 @@
-# monad-toe
-tictactoe in haskell
+# tictactoe

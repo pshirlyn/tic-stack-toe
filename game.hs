@@ -2,12 +2,18 @@ import Data.List
 import System.IO
 import Control.Monad.State.Lazy
 
-import Brick
-import Brick.BChan (newBChan, writeBChan)
-import qualified Brick.Widgets.Border as B
-import qualified Brick.Widgets.Border.Style as BS
-import qualified Brick.Widgets.Center as C
-import qualified Graphics.Vty as V
+import Control.Monad.IO.Class
+import Data.IORef
+import Graphics.UI.Gtk hiding (get, Action)
+
+-- import Brick
+-- import Brick.BChan (newBChan, writeBChan)
+-- import qualified Brick.Main as M
+-- import qualified Brick.Widgets.Border as B
+-- import qualified Brick.Widgets.Border.Style as BS
+-- import qualified Brick.Widgets.Center as C
+-- import qualified Brick.Widgets.Core as CR
+-- import qualified Graphics.Vty as V
 
 data Square = X | O | Empty
     deriving (Show, Eq)
@@ -48,6 +54,9 @@ move x y square = do
     let board' = replace x (replace y square (board !! x)) board
     put board'
     return board'
+
+oneMove :: Board
+oneMove = evalState (move 0 0 X) emptyBoard
 
 -- returns a new List replacing element at index with given elem
 replace :: Int -> a -> [a] -> [a]
@@ -103,22 +112,48 @@ getRow board x = show (board !! x)
 --             , appChooseCursor = 
 -- }
 
--- drawGrid :: Board -> Widget Name
--- drawGrid b = withBorderStyle BS.unicodeBold
---     $ B.borderWithLabel (str "TicTacToe")
---     $ vBox rows
+-- renderUI :: Board -> [Widget ()]
+-- renderUI b = [renderBoard b]
 
-renderBoard :: Board -> Widget ()
-renderBoard b = displayRow b 0 <=> displayRow b 1 <=> displayRow b 2
+-- renderBoard :: Board -> Widget ()
+-- renderBoard b = 
+--             CR.joinBorders $
+--             CR.hLimit 6 $
+--             CR.vLimit 7 $
+--             displayRow b 0 
+--             <=> B.hBorder
+--             <=> displayRow b 1 
+--             <=> B.hBorder
+--             <=> displayRow b 2
 
-displayRow :: Board -> Int -> Widget ()
-displayRow board i = str (getSquare board i 0)
-                <+> str (getSquare board i 1)
-                <+> str (getSquare board i 2)
+-- displayRow :: Board -> Int -> Widget ()
+-- displayRow board i = str (getSquare board i 0)
+--                 <+>  B.vBorder
+--                 <+>  str (getSquare board i 1)
+--                 <+>  B.vBorder
+--                 <+>  str (getSquare board i 2)
+--         where display = B.border . str
 
-main :: IO ()
-main = do
-    simpleMain $ renderBoard emptyBoard
+-- appEvent :: Board -> BrickEvent n e -> EventM n (Next Board)
+-- appEvent 
+
+-- attMap :: Brick.AttrMap
+-- attMap = Brick.attrMap V.defAttr []
+
+-- main :: IO ()
+-- main = do
+--     let app = M.App { M.appDraw = renderUI
+--           , M.appChooseCursor = M.showFirstCursor
+--           , M.appHandleEvent = appEvent
+--           , M.appStartEvent = return
+--           , M.appAttrMap = const attMap
+--           }
+--     finalState <- defaultMain app emptyBoard
+--     putStr $ show finalState
+
+
+    -- void $ defaultMain app emptyBoard
+    -- simpleMain $ renderBoard emptyBoard
 
 getSquare :: Board -> Int -> Int -> String
 getSquare board x y 
@@ -126,3 +161,30 @@ getSquare board x y
     | square == X     = "X"
     | square == O     = "O" 
     where square = (board !! x) !! y
+
+main :: IO ()
+main = do
+    void initGUI
+    window <- windowNew
+    set window [ windowTitle         := "Tic-Tac-Toe"
+                , windowResizable    := True
+                , windowDefaultWidth  := 600
+                , windowDefaultHeight := 600 ]
+    
+    grid <- gridNew
+    -- gridSetRowHomogeneous grid True
+
+    -- let attach x y w h item = gridAttach grid item x y w h
+    -- mkBtn "_"   >>= attach 0 0 1 1
+    -- mkBtn "_"   >>= attach 0 1 1 1
+    -- mkBtn "_"   >>= attach 0 2 1 1
+    -- mkBtn "_"   >>= attach 1 0 1 1
+    -- mkBtn "_"   >>= attach 1 1 1 1
+    -- mkBtn "_"   >>= attach 1 2 1 1
+    -- mkBtn "_"   >>= attach 2 0 1 1
+    -- mkBtn "_"   >>= attach 2 1 1 1
+    -- mkBtn "_"   >>= attach 2 2 1 1    
+    -- containerAdd window grid
+
+    widgetShowAll window
+    mainGUI  
