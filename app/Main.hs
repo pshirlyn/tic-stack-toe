@@ -9,14 +9,10 @@ import qualified Data.Text as T
 import qualified GI.Gtk.Functions as GI (main, init)
 import GI.Gtk hiding (get, Action, main)
 
--- import Brick
--- import Brick.BChan (newBChan, writeBChan)
--- import qualified Brick.Main as M
--- import qualified Brick.Widgets.Border as B
--- import qualified Brick.Widgets.Border.Style as BS
--- import qualified Brick.Widgets.Center as C
--- import qualified Brick.Widgets.Core as CR
--- import qualified Graphics.Vty as V
+data UIState = UIState { active    :: Square
+                       , board     :: Board
+                       , gameState :: GameState
+                       } deriving (Show)
 
 data Square = X | O | Empty
     deriving (Show, Eq)
@@ -25,7 +21,7 @@ type Board = [[Square]]
 data Action = Quit | Play Int Int
     deriving (Show)
 
-data GameState = Won | Tied | Playing
+data GameState = Won | Tied | Playing deriving (Show)
 
 -- generate an empty board
 emptyBoard :: Board
@@ -110,53 +106,8 @@ textGame = execStateT (play X) emptyBoard
 getRow :: Board -> Int -> String
 getRow board x = show (board !! x)
 
--- app :: App Board
--- app = App { appDraw = drawUI
---             , appChooseCursor = 
--- }
-
--- renderUI :: Board -> [Widget ()]
--- renderUI b = [renderBoard b]
-
--- renderBoard :: Board -> Widget ()
--- renderBoard b = 
---             CR.joinBorders $
---             CR.hLimit 6 $
---             CR.vLimit 7 $
---             displayRow b 0 
---             <=> B.hBorder
---             <=> displayRow b 1 
---             <=> B.hBorder
---             <=> displayRow b 2
-
--- displayRow :: Board -> Int -> Widget ()
--- displayRow board i = str (getSquare board i 0)
---                 <+>  B.vBorder
---                 <+>  str (getSquare board i 1)
---                 <+>  B.vBorder
---                 <+>  str (getSquare board i 2)
---         where display = B.border . str
-
--- appEvent :: Board -> BrickEvent n e -> EventM n (Next Board)
--- appEvent 
-
--- attMap :: Brick.AttrMap
--- attMap = Brick.attrMap V.defAttr []
-
--- main :: IO ()
--- main = do
---     let app = M.App { M.appDraw = renderUI
---           , M.appChooseCursor = M.showFirstCursor
---           , M.appHandleEvent = appEvent
---           , M.appStartEvent = return
---           , M.appAttrMap = const attMap
---           }
---     finalState <- defaultMain app emptyBoard
---     putStr $ show finalState
-
-
-    -- void $ defaultMain app emptyBoard
-    -- simpleMain $ renderBoard emptyBoard
+-- renderBoard :: Board -> IO ()
+-- renderBoard board = 
 
 getSquare :: Board -> Int -> Int -> String
 getSquare board x y 
@@ -169,7 +120,23 @@ mkBtn :: String -> IO Button
 mkBtn label = do
   btn <- buttonNew
   set btn [ buttonLabel := T.pack label ]
+  onButtonClicked btn $
+    set btn [ buttonLabel := T.pack "X" ]
   return btn
+
+mkButton
+    :: IORef UIState
+    -> String
+    -> (UIState -> UIState)
+    -> IO Button
+mkButton st label mutateState = do
+    btn <- buttonNew
+    set btn [ buttonLabel := T.pack label ]
+    onButtonClicked btn $ do
+        newState <- atomicModifyIORef st $ \x -> let r = mutateState x in (r, r)
+        set btn [ buttonLabel := T.pack (show $ active newState) ]
+    return btn
+
 
 main :: IO ()
 main = do
@@ -178,7 +145,7 @@ main = do
     set window [ windowTitle         := T.pack "Tic-Tac-Toe"
                 , windowResizable    := True
                 , windowDefaultWidth  := 600
-                , windowDefaultHeight := 600 ]
+                , windowDefaultHeight := 300 ]
     
     grid <- gridNew
     gridSetRowHomogeneous grid True
