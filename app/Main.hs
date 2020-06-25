@@ -15,7 +15,12 @@ data UIState = UIState { active    :: Square
                        } deriving (Show)
 
 data Square = X | O | Empty
-    deriving (Show, Eq)
+    deriving (Eq)
+instance Show Square where
+    show X = "X"
+    show O = "O"
+    show Empty = "_"
+
 type Board = [[Square]]
 
 data Action = Quit | Play Int Int
@@ -116,30 +121,21 @@ getSquare board x y
     | square == O     = "O" 
     where square = (board !! x) !! y
 
-mkBtn :: String -> IO Button
-mkBtn label = do
-  btn <- buttonNew
-  set btn [ buttonLabel := T.pack label ]
-  onButtonClicked btn $
-    set btn [ buttonLabel := T.pack "X" ]
-  return btn
-
 mkButton
     :: IORef UIState
-    -> String
     -> (UIState -> UIState)
     -> IO Button
-mkButton st label mutateState = do
+mkButton st mutateState = do
     btn <- buttonNew
-    set btn [ buttonLabel := T.pack label ]
+    set btn [ buttonLabel := T.pack "_" ]
     onButtonClicked btn $ do
         newState <- atomicModifyIORef st $ \x -> let r = mutateState x in (r, r)
         set btn [ buttonLabel := T.pack (show $ active newState) ]
     return btn
 
-
 main :: IO ()
 main = do
+    st <- newIORef (UIState X emptyBoard Playing)
     GI.init Nothing
     window <- windowNew WindowTypeToplevel
     set window [ windowTitle         := T.pack "Tic-Tac-Toe"
@@ -151,15 +147,16 @@ main = do
     gridSetRowHomogeneous grid True
 
     let attach x y w h item = gridAttach grid item x y w h
-    mkBtn "_"   >>= attach 0 0 1 1
-    mkBtn "_"   >>= attach 0 1 1 1
-    mkBtn "_"   >>= attach 0 2 1 1
-    mkBtn "_"   >>= attach 1 0 1 1
-    mkBtn "_"   >>= attach 1 1 1 1
-    mkBtn "_"   >>= attach 1 2 1 1
-    mkBtn "_"   >>= attach 2 0 1 1
-    mkBtn "_"   >>= attach 2 1 1 1
-    mkBtn "_"   >>= attach 2 2 1 1    
+        mkBtn = mkButton st id
+    mkBtn  >>= attach 0 0 1 1
+    mkBtn  >>= attach 0 1 1 1
+    mkBtn  >>= attach 0 2 1 1
+    mkBtn  >>= attach 1 0 1 1
+    mkBtn  >>= attach 1 1 1 1
+    mkBtn  >>= attach 1 2 1 1
+    mkBtn  >>= attach 2 0 1 1
+    mkBtn  >>= attach 2 1 1 1
+    mkBtn  >>= attach 2 2 1 1    
     containerAdd window grid
 
     onWidgetDestroy window mainQuit
