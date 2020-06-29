@@ -9,8 +9,8 @@ import qualified Data.Text as T
 import qualified GI.Gtk.Functions as GI (main, init)
 import GI.Gtk hiding (get, Action, main)
 
-data UIState = UIState { active    :: Square
-                       , board     :: Board
+data UIState = UIState { active    :: Square -- player who's active
+                       , board     :: Board 
                        , gameState :: GameState
                        } deriving (Show)
 
@@ -111,9 +111,6 @@ textGame = execStateT (play X) emptyBoard
 getRow :: Board -> Int -> String
 getRow board x = show (board !! x)
 
--- renderBoard :: Board -> IO ()
--- renderBoard board = 
-
 getSquare :: Board -> Int -> Int -> String
 getSquare board x y 
     | square == Empty = "_"
@@ -135,7 +132,7 @@ mkButton st mutateState = do
 
 main :: IO ()
 main = do
-    st <- newIORef (UIState X emptyBoard Playing)
+    st <- newIORef (UIState O emptyBoard Playing)
     GI.init Nothing
     window <- windowNew WindowTypeToplevel
     set window [ windowTitle         := T.pack "Tic-Tac-Toe"
@@ -147,18 +144,29 @@ main = do
     gridSetRowHomogeneous grid True
 
     let attach x y w h item = gridAttach grid item x y w h
-        mkBtn = mkButton st id
-    mkBtn  >>= attach 0 0 1 1
-    mkBtn  >>= attach 0 1 1 1
-    mkBtn  >>= attach 0 2 1 1
-    mkBtn  >>= attach 1 0 1 1
-    mkBtn  >>= attach 1 1 1 1
-    mkBtn  >>= attach 1 2 1 1
-    mkBtn  >>= attach 2 0 1 1
-    mkBtn  >>= attach 2 1 1 1
-    mkBtn  >>= attach 2 2 1 1    
+    mkButton st (handleClick 0 0) >>= attach 0 0 1 1
+    mkButton st (handleClick 0 1)  >>= attach 0 1 1 1
+    mkButton st (handleClick 0 2) >>= attach 0 2 1 1
+    mkButton st (handleClick 1 0) >>= attach 1 0 1 1
+    mkButton st (handleClick 1 1) >>= attach 1 1 1 1
+    mkButton st (handleClick 1 2) >>= attach 1 2 1 1
+    mkButton st (handleClick 2 0) >>= attach 2 0 1 1
+    mkButton st (handleClick 2 1) >>= attach 2 1 1 1
+    mkButton st (handleClick 2 2) >>= attach 2 2 1 1    
     containerAdd window grid
 
     onWidgetDestroy window mainQuit
     widgetShowAll window
-    GI.main  
+    GI.main
+
+handleClick :: Int -> Int -> UIState -> UIState
+handleClick x y currentState =
+    UIState { active = currentPlayer
+            , board = makeMove x y currentPlayer $ board currentState
+            , gameState = Playing
+            }
+    where currentPlayer = invertPlayer $ active currentState
+
+-- place square on (x, y)
+makeMove :: Int -> Int -> Square -> Board -> Board
+makeMove x y square board = replace x (replace y square (board !! x)) board
