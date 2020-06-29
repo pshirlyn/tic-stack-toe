@@ -120,14 +120,16 @@ getSquare board x y
 
 mkButton
     :: IORef UIState
+    -> Entry
     -> (UIState -> UIState)
     -> IO Button
-mkButton st mutateState = do
+mkButton st entry mutateState = do
     btn <- buttonNew
     set btn [ buttonLabel := T.pack "_" ]
     onButtonClicked btn $ do
         newState <- atomicModifyIORef st $ \x -> let r = mutateState x in (r, r)
-        set btn [ buttonLabel := T.pack (show $ active newState) ]
+        set btn [ buttonLabel := T.pack $ show $ active newState]
+        set entry [ entryText := T.pack $ show $ gameState newState]
     return btn
 
 main :: IO ()
@@ -143,30 +145,39 @@ main = do
     grid <- gridNew
     gridSetRowHomogeneous grid True
 
-    let attach x y w h item = gridAttach grid item x y w h
-    mkButton st (handleClick 0 0) >>= attach 0 0 1 1
-    mkButton st (handleClick 0 1)  >>= attach 0 1 1 1
-    mkButton st (handleClick 0 2) >>= attach 0 2 1 1
-    mkButton st (handleClick 1 0) >>= attach 1 0 1 1
-    mkButton st (handleClick 1 1) >>= attach 1 1 1 1
-    mkButton st (handleClick 1 2) >>= attach 1 2 1 1
-    mkButton st (handleClick 2 0) >>= attach 2 0 1 1
-    mkButton st (handleClick 2 1) >>= attach 2 1 1 1
-    mkButton st (handleClick 2 2) >>= attach 2 2 1 1    
+    display <- entryNew
+    set display [ entryEditable := False
+                , entryText     := T.pack "Playing" ]
+    
+    gridAttach grid display 0 3 3 1
+
+    let attach x y item = gridAttach grid item x y 1 1
+        mkBtn x y = mkButton st display (handleClick x y) 
+    mkBtn 0 0 >>= attach 0 0
+    mkBtn 0 1 >>= attach 0 1
+    mkBtn 0 2 >>= attach 0 2
+    mkBtn 1 0 >>= attach 1 0
+    mkBtn 1 1 >>= attach 1 1
+    mkBtn 1 2 >>= attach 1 2
+    mkBtn 2 0 >>= attach 2 0
+    mkBtn 2 1 >>= attach 2 1
+    mkBtn 2 2 >>= attach 2 2   
     containerAdd window grid
 
     onWidgetDestroy window mainQuit
     widgetShowAll window
     GI.main
 
-handleClick :: Int -> Int -> UIState -> UIState
+handleClick :: Int -> Int ->  UIState -> UIState
 handleClick x y currentState =
     UIState { active = currentPlayer
-            , board = makeMove x y currentPlayer $ board currentState
-            , gameState = Playing
+            , board = newBoard
+            , gameState = boardState newBoard
             }
     where currentPlayer = invertPlayer $ active currentState
+          newBoard      = makeMove x y currentPlayer $ board currentState
 
 -- place square on (x, y)
 makeMove :: Int -> Int -> Square -> Board -> Board
 makeMove x y square board = replace x (replace y square (board !! x)) board
+
